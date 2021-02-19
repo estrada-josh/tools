@@ -448,3 +448,67 @@ for i in df.index:
 print(hc, lc, c)
 
 ############
+
+# CREATE A DATAFRAME FROM YAHOO FINANCE FOR SINGLE TICKER AND CALCULATE RSI
+
+import pandas as pd, shutil, os, time, glob
+from datetime import date
+import numpy as np
+import yfinance as yf
+import datetime as dt
+from pandas_datareader import data as pdr
+import requests
+from statistics import mean
+
+#yahoo finance workaround
+yf.pdr_override()
+
+#stock to read
+stock = input("Enter a stock ticker symbol: ")
+if len(stock) < 1 : stock = "AMD"
+
+#start and end of info gathering
+start = dt.datetime(2000,1,1)
+end = date.today()
+
+#create data frame with stock info
+df = round(pdr.get_data_yahoo(stock,start,end),3)
+
+################
+
+#Calculating RSI
+
+#create column that tracks difference in price over each day and creates new up or down colums
+# dont need to create columns for this. But they are useful to visualize the values and check work
+# df['Delta'], df['Up'], df['Down']
+delta = df.iloc[:,4].diff()
+up = delta.clip(lower=0)
+down = -1 * delta.clip(upper=0)
+
+#variables that contain average value over 14 days of differences in price per day
+ema_up = up.ewm(com=13, adjust=False).mean()
+ema_down = down.ewm(com=13, adjust=False).mean()
+
+#RSI formula and put it in a new RSI column in the dataframe
+rs = ema_up/ema_down
+df['RSI'] = 100 - (100/(1 + rs))
+################
+
+#list of numbers to use for ema periods
+ema_used = [3,5,8,10,12,15,30,35,40,45,50,60]
+
+#creates new column for each ema period in the above list
+for per in ema_used:
+    ema_str = str(per) + 'EMA'
+    df[ema_str] = round(df.iloc[:,4].ewm(span=per, adjust=False).mean(),3)
+
+#looking up value for each column and checking the lowest ema value and the highest ema value
+# for i in df.index:
+#     crit_min = min(df['3EMA'][i],df['5EMA'][i],df['8EMA'][i],df['10EMA'][i],df['12EMA'][i],df['15EMA'][i])
+#     crit_max = max(df['30EMA'][i],df['35EMA'][i],df['40EMA'][i],df['45EMA'][i],df['50EMA'][i],df['60EMA'][i])
+#     close = df['Adj Close'][i]
+
+    #if the previous adjusted close is lower than the next adjusted close
+print(df.tail())
+
+###########################
