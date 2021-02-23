@@ -512,3 +512,29 @@ for per in ema_used:
 print(df.tail())
 
 ###########################
+
+#CLEAN CSV TO FILTER BY COLUMN VALUES
+
+import pandas as pd
+from pandas_datareader import data as pdr
+import numpy as np
+
+files = ['amex.csv','nasdaq.csv','nyse.csv']
+tickers = []
+vol_lim = 2000000
+c = 0
+
+for file in files:
+    df = pd.read_csv(file, parse_dates = True, index_col=0)
+    i = (df.iloc[:,7])
+    for tic in df['Volume'].index:
+        vol = (df['Volume'][tic])
+        if vol < 2000000:
+            continue
+        tickers.append(tic)
+        c = c + 1
+
+
+print(tickers, c)
+
+############
